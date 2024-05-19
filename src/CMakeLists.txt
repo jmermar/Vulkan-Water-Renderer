@@ -11,7 +11,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 if(Win32)
     target_compile_options(${PROJECT_NAME} PRIVATE "/warnaserror")
 elseif(UNIX)
-    target_compile_options(${PROJECT_NAME} PRIVATE "-Wall" "-Werror")
+    target_compile_options(${PROJECT_NAME} PRIVATE "-Werror")
 endif(Win32)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
