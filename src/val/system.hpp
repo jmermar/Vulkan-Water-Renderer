@@ -1,6 +1,9 @@
 #pragma once
 #include <cassert>
 
+#include <imgui.h>
+#include <imgui_impl_vulkan.h>
+
 #include "../foundation/memory.hpp"
 #include "binding.hpp"
 #include "commands.hpp"
@@ -14,6 +17,7 @@ class PresentationProvider {
    public:
     virtual VkSurfaceKHR getSurface(VkInstance ins) = 0;
     virtual Size getSize() = 0;
+    virtual void initImgui() {}
 };
 
 class Engine {
@@ -76,6 +80,8 @@ class Engine {
     vk::raii::PhysicalDevice chosenGPU{nullptr};
     vk::raii::SurfaceKHR surface{nullptr};
 
+    vk::raii::DescriptorPool imguiDescriptorPool{NULL};
+
     raii::VMA vma;
 
     vk::Queue graphicsQueue;
@@ -102,12 +108,20 @@ class Engine {
     void reloadSwapchain();
     void initFrameData();
 
+    void initImgui();
+
     void regenerate();
 
    public:
     Engine() = default;
     Engine(const EngineInitConfig& initConfig,
            Ref<PresentationProvider> presentation);
+
+    ~Engine() {
+        if (initConfig.useImGUI) {
+            ImGui_ImplVulkan_Shutdown();
+        }
+    }
 
     void update();
 

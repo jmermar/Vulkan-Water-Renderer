@@ -152,6 +152,55 @@ Engine::Engine(const EngineInitConfig& initConfig,
     reloadSwapchain();
     initFrameData();
     bindings.init(device, physicalDeviceProperties);
+
+    if (initConfig.useImGUI) {
+        initImgui();
+    }
+}
+
+void Engine::initImgui() {
+     vk::DescriptorPoolSize pool_sizes[] = {
+        {vk::DescriptorType::eSampler, 1000},
+        {vk::DescriptorType::eCombinedImageSampler, 1000},
+        {vk::DescriptorType::eSampledImage, 1000},
+        {vk::DescriptorType::eStorageImage, 1000},
+        {vk::DescriptorType::eUniformTexelBuffer, 1000},
+        {vk::DescriptorType::eStorageTexelBuffer, 1000},
+        {vk::DescriptorType::eUniformBuffer, 1000},
+        {vk::DescriptorType::eStorageBuffer, 1000},
+        {vk::DescriptorType::eUniformBufferDynamic, 1000},
+        {vk::DescriptorType::eStorageBufferDynamic, 1000},
+        {vk::DescriptorType::eInputAttachment, 1000}};
+    vk::DescriptorPoolCreateInfo poolCreate;
+    poolCreate.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+    poolCreate.maxSets = 1000;
+    poolCreate.poolSizeCount = std::size(pool_sizes);
+    poolCreate.pPoolSizes = pool_sizes;
+
+    imguiDescriptorPool = device.createDescriptorPool(poolCreate);
+
+    ImGui::CreateContext();
+    presentation->initImgui();
+
+    VkFormat format = (VkFormat)TextureFormat::RGBA16;
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    init_info.Instance = *instance;
+    init_info.PhysicalDevice = *chosenGPU;
+    init_info.Device = *device;
+    init_info.Queue = graphicsQueue;
+    init_info.DescriptorPool = *imguiDescriptorPool;
+    init_info.MinImageCount = FRAMES_IN_FLIGHT;
+    init_info.ImageCount = FRAMES_IN_FLIGHT;
+    init_info.UseDynamicRendering = true;
+
+    init_info.PipelineRenderingCreateInfo.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+    init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+    init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &format;
+
+    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+    ImGui_ImplVulkan_Init(&init_info);
 }
 
 void Engine::update() {}
@@ -192,6 +241,14 @@ void Engine::submitFrame(Texture* backbuffer) {
     auto cmd = CommandBuffer(*this, *frame.commandBuffer);
     auto image = swapchain.images[imageIndex];
     if (backbuffer != nullptr) {
+        if (initConfig.useImGUI) {
+            Texture* fb[1] = {backbuffer};
+            cmd.beginPass(std::span(std::span(fb)));
+
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(),
+                                            *frame.commandBuffer);
+            cmd.endPass();
+        }
         cmd.transitionImage(backbuffer->image, vk::RemainingMipLevels,
                             vk::ImageLayout::eUndefined,
                             vk::ImageLayout::eTransferSrcOptimal);

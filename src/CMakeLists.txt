@@ -26,4 +26,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     vk-bootstrap::vk-bootstrap
     vma
     stb_image
+    imgui
 )
