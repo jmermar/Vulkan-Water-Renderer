@@ -6,9 +6,9 @@ file(GLOB_RECURSE SRC
 
 
 add_library(imgui STATIC)
-target_include_directories(imgui PUBLIC include )
-
 find_package(Vulkan REQUIRED)
+
+target_include_directories(imgui PUBLIC include ${Vulkan_INCLUDE_DIRS})
 
 target_sources(imgui PRIVATE ${SRC} PRIVATE)
 

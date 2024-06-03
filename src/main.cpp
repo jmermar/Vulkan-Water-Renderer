@@ -1,7 +1,7 @@
 #include <memory>
 
-#include <val/vulkan_abstraction.hpp>
 #include <imgui_impl_sdl3.h>
+#include <val/vulkan_abstraction.hpp>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
@@ -31,9 +31,7 @@ public:
     return {(uint32_t)w, (uint32_t)h};
   }
 
-  void initImgui() override {
-    ImGui_ImplSDL3_InitForVulkan(window);
-  }
+  void initImgui() override { ImGui_ImplSDL3_InitForVulkan(window); }
 };
 
 int main() {
@@ -49,8 +47,13 @@ int main() {
 
   auto image = file::loadImage("tex.jpg");
 
-  auto texture = engine->createTexture(image.size, val::TextureFormat::RGBA8);
-  writer.enqueueTextureWrite(texture, image.data.data());
+  auto texture = engine->createCubemap(image.size, val::TextureFormat::RGBA8);
+  writer.enqueueTextureWrite(texture, image.data.data(), 0);
+  writer.enqueueTextureWrite(texture, image.data.data(), 1);
+  writer.enqueueTextureWrite(texture, image.data.data(), 2);
+  writer.enqueueTextureWrite(texture, image.data.data(), 3);
+  writer.enqueueTextureWrite(texture, image.data.data(), 4);
+  writer.enqueueTextureWrite(texture, image.data.data(), 5);
 
   auto framebuffer = engine->createTexture(winsize, val::TextureFormat::RGBA16);
   bool isOpen = true;
@@ -74,8 +77,7 @@ int main() {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
-    ImGui::Begin(
-        "vkRaster", &isTrue);
+    ImGui::Begin("vkRaster", &isTrue);
 
     if (ImGui::Button("Exit")) {
       isOpen = false;
@@ -92,11 +94,12 @@ int main() {
     if (cmd.isValid()) {
       writer.updateWrites(cmd);
 
-    cmd.transitionTexture(texture, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
-    cmd.transitionTexture(framebuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+      cmd.transitionTexture(texture, vk::ImageLayout::eUndefined,
+                            vk::ImageLayout::eTransferSrcOptimal);
+      cmd.transitionTexture(framebuffer, vk::ImageLayout::eUndefined,
+                            vk::ImageLayout::eTransferDstOptimal);
 
-    cmd.copyTextureToTexture(texture, framebuffer);
-
+      cmd.copyTextureToTexture(texture, framebuffer);
 
       engine->submitFrame(framebuffer);
     }

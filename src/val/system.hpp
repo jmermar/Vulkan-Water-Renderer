@@ -14,158 +14,177 @@
 namespace val {
 
 class PresentationProvider {
-   public:
-    virtual VkSurfaceKHR getSurface(VkInstance ins) = 0;
-    virtual Size getSize() = 0;
-    virtual void initImgui() {}
+public:
+  virtual VkSurfaceKHR getSurface(VkInstance ins) = 0;
+  virtual Size getSize() = 0;
+  virtual void initImgui() {}
 };
 
 class Engine {
-    friend class PipelineBuilder;
-    friend class CommandBuffer;
-    friend class ComputePipelineBuilder;
+  friend class PipelineBuilder;
+  friend class CommandBuffer;
+  friend class ComputePipelineBuilder;
 
-   private:
-    // types
+private:
+  // types
 
-    struct DeletionQueue {
-        std::vector<Texture> textures;
-        std::vector<StorageBuffer> buffers;
-        std::vector<Mesh> meshes;
-        std::vector<raii::Buffer> rawBuffers;
+  struct DeletionQueue {
+    std::vector<Texture> textures;
+    std::vector<StorageBuffer> buffers;
+    std::vector<Mesh> meshes;
+    std::vector<raii::Buffer> rawBuffers;
 
-        void clear() {
-            textures.clear();
-            buffers.clear();
-            meshes.clear();
-            rawBuffers.clear();
-        }
-    };
+    void clear() {
+      textures.clear();
+      buffers.clear();
+      meshes.clear();
+      rawBuffers.clear();
+    }
+  };
 
-    struct Swapchain {
-        std::vector<vk::Image> images;
-        std::vector<vk::raii::ImageView> imageViews;
+  struct Swapchain {
+    std::vector<vk::Image> images;
+    std::vector<vk::raii::ImageView> imageViews;
 
-        vk::raii::SwapchainKHR swapchain{nullptr};
-    };
+    vk::raii::SwapchainKHR swapchain{nullptr};
+  };
 
-    struct FrameData {
-        vk::raii::CommandPool pool{nullptr};
-        vk::raii::CommandBuffer commandBuffer{nullptr};
+  struct FrameData {
+    vk::raii::CommandPool pool{nullptr};
+    vk::raii::CommandBuffer commandBuffer{nullptr};
 
-        vk::raii::Semaphore swapchainSemaphore{nullptr},
-            renderSemaphore{nullptr};
-        vk::raii::Fence renderFence{nullptr};
-
-        DeletionQueue deletionQueue;
-    };
-
-    // Info variables
-    Size windowSize;
-    EngineInitConfig initConfig;
-    bool _shouldClose = false;
-    uint32_t frameCounter{};
-    uint32_t swapchainImageIndex = 0;
-    uint32_t imageIndex = 0;
-    bool shouldRegenerate = false;
-
-    // System
-    Ref<PresentationProvider> presentation;
-
-    // Vulkan Components
-    vk::raii::Context ctx;
-    vk::raii::Instance instance{nullptr};
-    vk::raii::Device device{nullptr};
-    vk::raii::DebugUtilsMessengerEXT debug_messenger{nullptr};
-    vk::raii::PhysicalDevice chosenGPU{nullptr};
-    vk::raii::SurfaceKHR surface{nullptr};
-
-    vk::raii::DescriptorPool imguiDescriptorPool{NULL};
-
-    raii::VMA vma;
-
-    vk::Queue graphicsQueue;
-    vk::Queue presentQueue;
-
-    uint32_t graphicsQueueFamily;
-    uint32_t presentQueueFamily;
-
-    vk::PhysicalDeviceProperties physicalDeviceProperties;
-
-    Swapchain swapchain;
-    FrameData frames[FRAMES_IN_FLIGHT];
-
-    GlobalBinding bindings;
-
-    Pool<StorageBuffer, 4096> bufferPool;
-    Pool<Texture, 4096> texturePool;
-    Pool<Mesh, 4096> meshPool;
-    Pool<CPUBuffer, 4096> cpuBufferPool;
+    vk::raii::Semaphore swapchainSemaphore{nullptr}, renderSemaphore{nullptr};
+    vk::raii::Fence renderFence{nullptr};
 
     DeletionQueue deletionQueue;
+  };
 
-    void initVulkan();
-    void reloadSwapchain();
-    void initFrameData();
+  // Info variables
+  Size windowSize;
+  EngineInitConfig initConfig;
+  bool _shouldClose = false;
+  uint32_t frameCounter{};
+  uint32_t swapchainImageIndex = 0;
+  uint32_t imageIndex = 0;
+  bool shouldRegenerate = false;
 
-    void initImgui();
+  // System
+  Ref<PresentationProvider> presentation;
 
-    void regenerate();
+  // Vulkan Components
+  vk::raii::Context ctx;
+  vk::raii::Instance instance{nullptr};
+  vk::raii::Device device{nullptr};
+  vk::raii::DebugUtilsMessengerEXT debug_messenger{nullptr};
+  vk::raii::PhysicalDevice chosenGPU{nullptr};
+  vk::raii::SurfaceKHR surface{nullptr};
 
-   public:
-    Engine() = default;
-    Engine(const EngineInitConfig& initConfig,
-           Ref<PresentationProvider> presentation);
+  vk::raii::DescriptorPool imguiDescriptorPool{NULL};
 
-    ~Engine() {
-        if (initConfig.useImGUI) {
-            ImGui_ImplVulkan_Shutdown();
-        }
+  raii::VMA vma;
+
+  vk::Queue graphicsQueue;
+  vk::Queue presentQueue;
+
+  uint32_t graphicsQueueFamily;
+  uint32_t presentQueueFamily;
+
+  vk::PhysicalDeviceProperties physicalDeviceProperties;
+
+  Swapchain swapchain;
+  FrameData frames[FRAMES_IN_FLIGHT];
+
+  GlobalBinding bindings;
+
+  Pool<StorageBuffer, 4096> bufferPool;
+  Pool<Texture, 4096> texturePool;
+  Pool<Mesh, 4096> meshPool;
+  Pool<CPUBuffer, 4096> cpuBufferPool;
+
+  DeletionQueue deletionQueue;
+
+  void initVulkan();
+  void reloadSwapchain();
+  void initFrameData();
+
+  void initImgui();
+
+  void regenerate();
+
+  Texture *createTextureBase(Size size, uint32_t levels, TextureFormat format,
+                             TextureSampler sampling = TextureSampler::NEAREST,
+                             uint32_t mipLevels = 1,
+                             VkImageUsageFlags usage = 0, bool cubemap = false);
+
+public:
+  Engine() = default;
+  Engine(const EngineInitConfig &initConfig,
+         Ref<PresentationProvider> presentation);
+
+  ~Engine() {
+    if (initConfig.useImGUI) {
+      ImGui_ImplVulkan_Shutdown();
     }
+  }
 
-    void update();
+  void update();
 
-    CommandBuffer initFrame();
+  CommandBuffer initFrame();
 
-    void submitFrame(Texture* backbuffer);
+  void submitFrame(Texture *backbuffer);
 
-    Texture* createTexture(Size size, TextureFormat format,
-                           TextureSampler sampling = TextureSampler::NEAREST,
-                           uint32_t mipLevels = 1, VkImageUsageFlags usage = 0);
-    CPUBuffer* createCpuBuffer(size_t size);
-    StorageBuffer* createStorageBuffer(uint32_t size, vk::BufferUsageFlagBits usage = vk::BufferUsageFlagBits(0));
+  Texture *createTexture(Size size, TextureFormat format,
+                         TextureSampler sampling = TextureSampler::NEAREST,
+                         uint32_t mipLevels = 1, VkImageUsageFlags usage = 0) {
+    return createTextureBase(size, 1, format, sampling, mipLevels, usage);
+  }
+  Texture *createTextureArray(Size size, uint32_t layers, TextureFormat format,
+                              TextureSampler sampling = TextureSampler::LINEAR,
+                              VkImageUsageFlags flags = 0) {
+    return createTextureBase(size, layers, format, sampling, 1, flags);
+  }
+  Texture *createCubemap(Size size, TextureFormat format,
+                         TextureSampler sampling = TextureSampler::LINEAR,
+                         VkImageUsageFlags flags = 0) {
+    return createTextureBase(size, 6, format, sampling, 1, flags);
+  }
 
-    Mesh* createMesh(size_t verticesSize, uint32_t indicesCount);
+  CPUBuffer *createCpuBuffer(size_t size);
+  StorageBuffer *createStorageBuffer(
+      uint32_t size,
+      vk::BufferUsageFlagBits usage = vk::BufferUsageFlagBits(0));
 
-    void updateCPUBuffer(CPUBuffer* buffer, void* data, size_t size) {
-        assert(buffer->size == size);
-        memcpy(buffer->buffer.allocInfo.pMappedData, data, size);
-    }
+  Mesh *createMesh(size_t verticesSize, uint32_t indicesCount);
 
-    void freeTexture(Texture* t) {
-        deletionQueue.textures.push_back(std::move(*t));
-        texturePool.destroy(t);
-    }
+  void updateCPUBuffer(CPUBuffer *buffer, void *data, size_t size) {
+    assert(buffer->size == size);
+    memcpy(buffer->buffer.allocInfo.pMappedData, data, size);
+  }
 
-    void destroyCpuBuffer(CPUBuffer* buffer) {
-        deletionQueue.rawBuffers.push_back(std::move(buffer->buffer));
-        cpuBufferPool.destroy(buffer);
-    }
+  void freeTexture(Texture *t) {
+    deletionQueue.textures.push_back(std::move(*t));
+    texturePool.destroy(t);
+  }
 
-    void destroyStorageBuffer(StorageBuffer* buffer) {
-        deletionQueue.buffers.push_back(std::move(*buffer));
-        bufferPool.destroy(buffer);
-    }
+  void destroyCpuBuffer(CPUBuffer *buffer) {
+    deletionQueue.rawBuffers.push_back(std::move(buffer->buffer));
+    cpuBufferPool.destroy(buffer);
+  }
 
-    void destroyMesh(Mesh* mesh) {
-        deletionQueue.meshes.push_back(std::move(*mesh));
-        meshPool.destroy(mesh);
-    }
+  void destroyStorageBuffer(StorageBuffer *buffer) {
+    deletionQueue.buffers.push_back(std::move(*buffer));
+    bufferPool.destroy(buffer);
+  }
 
-    vk::DescriptorSetLayout getDescriptorSetLayout() {
-        return bindings.getLayout();
-    }
+  void destroyMesh(Mesh *mesh) {
+    deletionQueue.meshes.push_back(std::move(*mesh));
+    meshPool.destroy(mesh);
+  }
 
-    void waitFinishAllCommands() { device.waitIdle(); }
+  vk::DescriptorSetLayout getDescriptorSetLayout() {
+    return bindings.getLayout();
+  }
+
+  void waitFinishAllCommands() { device.waitIdle(); }
 };
-}  // namespace val
+} // namespace val
