@@ -146,7 +146,7 @@ public:
   Texture *createCubemap(Size size, TextureFormat format,
                          TextureSampler sampling = TextureSampler::LINEAR,
                          VkImageUsageFlags flags = 0) {
-    return createTextureBase(size, 6, format, sampling, 1, flags);
+    return createTextureBase(size, 6, format, sampling, 1, flags, true);
   }
 
   CPUBuffer *createCpuBuffer(size_t size);

@@ -1,10 +1,14 @@
 #include <memory>
 
+#include "SkyboxRenderer.hpp"
 #include <imgui_impl_sdl3.h>
-#include <val/vulkan_abstraction.hpp>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/matrix.hpp>
 
 class Window : public val::PresentationProvider {
 private:
@@ -34,6 +38,39 @@ public:
   void initImgui() override { ImGui_ImplSDL3_InitForVulkan(window); }
 };
 
+struct Camera {
+  glm::vec3 position = {0, 0, 0}, dir = {0, 0, 1};
+  float fov = 90, w = 1, h = 1;
+
+  void rotateX(float degrees) {
+    auto angle = glm::radians(degrees / 2.f);
+    glm::quat rotation(glm::cos(angle), glm::vec3(0, 1, 0) * glm::sin(angle));
+    glm::quat rotationC = glm::conjugate(rotation);
+
+    dir = rotation * dir * rotationC;
+  }
+
+  void rotateY(float degrees) {
+    auto angle = glm::radians(degrees / 2.f);
+    glm::quat rotation(glm::cos(angle),
+                       glm::normalize(glm::cross(dir, glm::vec3(0, 1, 0))) *
+                           glm::sin(angle));
+    glm::quat rotationC = glm::conjugate(rotation);
+
+    dir = rotation * dir * rotationC;
+  }
+
+  glm::mat4 getView() {
+    return glm::lookAt(position, dir + position, glm::vec3(0, 1, 0));
+  }
+
+  glm::mat4 getProjection() {
+    auto ret = glm::perspective(glm::radians(fov), w / h, 0.01f, 3000.f);
+    ret[1][1] *= -1;
+    return ret;
+  }
+};
+
 int main() {
   Size winsize = {1280, 720};
   auto win = std::make_unique<Window>(winsize, "My vulkan app!!");
@@ -45,20 +82,16 @@ int main() {
   auto engine = std::make_unique<val::Engine>(init, win.get());
   val::BufferWriter writer(*engine);
 
-  auto image = file::loadImage("tex.jpg");
-
-  auto texture = engine->createCubemap(image.size, val::TextureFormat::RGBA8);
-  writer.enqueueTextureWrite(texture, image.data.data(), 0);
-  writer.enqueueTextureWrite(texture, image.data.data(), 1);
-  writer.enqueueTextureWrite(texture, image.data.data(), 2);
-  writer.enqueueTextureWrite(texture, image.data.data(), 3);
-  writer.enqueueTextureWrite(texture, image.data.data(), 4);
-  writer.enqueueTextureWrite(texture, image.data.data(), 5);
-
   auto framebuffer = engine->createTexture(winsize, val::TextureFormat::RGBA16);
   bool isOpen = true;
 
   bool isTrue = true;
+
+  SkyboxRenderer skyboxRenderer(*engine, writer);
+
+  Camera camera;
+
+  camera.dir = glm::normalize(glm::vec3(0, -0.5, 1));
 
   while (isOpen) {
     SDL_Event ev;
@@ -85,21 +118,25 @@ int main() {
 
     ImGui::End();
 
-    ImGui::ShowDemoWindow(&isTrue);
-
     ImGui::Render();
 
     auto cmd = engine->initFrame();
 
     if (cmd.isValid()) {
+
       writer.updateWrites(cmd);
 
-      cmd.transitionTexture(texture, vk::ImageLayout::eUndefined,
-                            vk::ImageLayout::eTransferSrcOptimal);
-      cmd.transitionTexture(framebuffer, vk::ImageLayout::eUndefined,
-                            vk::ImageLayout::eTransferDstOptimal);
+      RenderState rs;
+      rs.cmd = &cmd;
+      rs.colorBuffer = framebuffer;
+      rs.depthBuffer = nullptr;
+      rs.projectionMatrix = camera.getProjection();
+      rs.viewMatrix = camera.getView();
 
-      cmd.copyTextureToTexture(texture, framebuffer);
+      cmd.transitionTexture(framebuffer, vk::ImageLayout::eUndefined,
+                            vk::ImageLayout::eColorAttachmentOptimal);
+
+      skyboxRenderer.renderSkybox(rs);
 
       engine->submitFrame(framebuffer);
     }
