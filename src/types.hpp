@@ -9,5 +9,11 @@ struct RenderState {
   glm::mat4 projectionMatrix;
   glm::mat4 viewMatrix;
 
+  glm::vec3 camPos;
+
   val::CommandBuffer *cmd;
+
+  float time = 0;
+
+  val::Texture *ambientMap;
 };

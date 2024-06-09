@@ -7,6 +7,7 @@ layout(location = 0) out vec4 color;
 
 layout(push_constant) uniform constants {
     mat4 projView;
+    vec3 camPos;
     uint skyboxTexture;
 };
 

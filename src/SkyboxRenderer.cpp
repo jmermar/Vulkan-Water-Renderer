@@ -35,6 +35,7 @@ glm::vec3 cubeVertices[6 * 4] = {
 
 struct PushConstants {
   glm::mat4 projView;
+  glm::vec3 camPos;
   val::BindPoint<val::Texture> skybox;
 };
 
@@ -97,6 +98,7 @@ void SkyboxRenderer::renderSkybox(RenderState &rs) {
   cmd.beginPass(std::span(&rs.colorBuffer, 1));
   PushConstants pc;
   pc.projView = rs.projectionMatrix * rs.viewMatrix;
+  pc.camPos = rs.camPos;
   pc.skybox = skybox->bindPoint;
 
   cmd.bindPipeline(pipeline);

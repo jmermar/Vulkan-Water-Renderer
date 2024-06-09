@@ -14,4 +14,6 @@ public:
   ~SkyboxRenderer();
 
   void renderSkybox(RenderState &rs);
+
+  val::Texture *getSkybox() { return skybox; }
 };

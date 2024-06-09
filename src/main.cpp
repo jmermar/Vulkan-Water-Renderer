@@ -6,6 +6,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
+#include "WaterRenderer.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/matrix.hpp>
@@ -83,17 +84,30 @@ int main() {
   val::BufferWriter writer(*engine);
 
   auto framebuffer = engine->createTexture(winsize, val::TextureFormat::RGBA16);
+  auto depthbuffer =
+      engine->createTexture(winsize, val::TextureFormat::DEPTH32);
   bool isOpen = true;
 
   bool isTrue = true;
 
   SkyboxRenderer skyboxRenderer(*engine, writer);
+  WaterRenderer waterRenderer(*engine, writer);
 
   Camera camera;
 
-  camera.dir = glm::normalize(glm::vec3(0, -0.5, 1));
+  camera.dir = glm::normalize(glm::vec3(0, -1, 10));
 
+  camera.position.y = 2;
+
+  auto ticks = SDL_GetTicks();
+
+  float time = 0;
   while (isOpen) {
+    auto elapsed = SDL_GetTicks() - ticks;
+    ticks = SDL_GetTicks();
+
+    float delta = elapsed / 1000.f;
+    time += delta;
     SDL_Event ev;
 
     while (SDL_PollEvent(&ev)) {
@@ -129,14 +143,22 @@ int main() {
       RenderState rs;
       rs.cmd = &cmd;
       rs.colorBuffer = framebuffer;
-      rs.depthBuffer = nullptr;
+      rs.depthBuffer = depthbuffer;
       rs.projectionMatrix = camera.getProjection();
       rs.viewMatrix = camera.getView();
+      rs.camPos = camera.position;
+      rs.time = time;
+      rs.ambientMap = skyboxRenderer.getSkybox();
 
       cmd.transitionTexture(framebuffer, vk::ImageLayout::eUndefined,
                             vk::ImageLayout::eColorAttachmentOptimal);
 
       skyboxRenderer.renderSkybox(rs);
+      cmd.memoryBarrier(vk::PipelineStageFlagBits2::eLateFragmentTests,
+                        vk::AccessFlagBits2::eMemoryWrite,
+                        vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+                        vk::AccessFlagBits2::eMemoryWrite);
+      waterRenderer.renderWater(rs);
 
       engine->submitFrame(framebuffer);
     }
