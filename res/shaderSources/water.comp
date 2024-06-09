@@ -1,0 +1,60 @@
+#version 460
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_nonuniform_qualifier : require
+
+#include "bindUtils.h"
+
+const float PATCH_SIZE = 4;
+const uint MAX_PATCH = 128;
+const uint NUM_PATCHES = MAX_PATCH * MAX_PATCH;
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+SSB(drawIndirectCommand, {
+    uint vertexCount;
+    uint instanceCount;
+    uint firstVertex;
+    uint firstInstance;
+});
+
+SSB(waterPatches, { vec4 vertices[]; });
+
+layout(push_constant) uniform PushConstants {
+    vec3 camPos;
+    uint waterPatchesBind;
+    uint drawIndirectCommandBind;
+};
+
+void main() {
+    if (gl_LocalInvocationID.x == 0) {
+        GET(drawIndirectCommand).vertexCount = 0;
+        GET(drawIndirectCommand).instanceCount = 1;
+        GET(drawIndirectCommand).firstInstance = 0;
+        GET(drawIndirectCommand).firstVertex = 0;
+    }
+    barrier();
+
+    if (gl_GlobalInvocationID.x < NUM_PATCHES) {
+        uint px = gl_GlobalInvocationID.x % MAX_PATCH;
+        uint pz = gl_GlobalInvocationID.x / MAX_PATCH;
+        vec4 topLeft = (vec4(MAX_PATCH * 0.5, 0, MAX_PATCH * 0.5, 0) -
+                        vec4(px, 0, pz, 0)) *
+                       PATCH_SIZE;
+        topLeft.w = 1;
+        topLeft += vec4(floor(camPos.x / PATCH_SIZE), 0,
+                        floor(camPos.z / PATCH_SIZE), 0) *
+                   PATCH_SIZE;
+
+        if (GET(drawIndirectCommand).vertexCount != NUM_PATCHES * 4) {
+            uint idx = atomicAdd(GET(drawIndirectCommand).vertexCount, 4);
+
+            GET(waterPatches).vertices[idx] = topLeft;
+            GET(waterPatches).vertices[idx + 1] =
+                topLeft + vec4(PATCH_SIZE, 0, 0, 0);
+            GET(waterPatches).vertices[idx + 2] =
+                topLeft + vec4(0, 0, PATCH_SIZE, 0);
+            GET(waterPatches).vertices[idx + 3] =
+                topLeft + vec4(PATCH_SIZE, 0, PATCH_SIZE, 0);
+        }
+    }
+}

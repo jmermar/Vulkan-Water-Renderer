@@ -7,6 +7,7 @@
 #include <SDL3/SDL_vulkan.h>
 
 #include "WaterRenderer.hpp"
+#include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/matrix.hpp>
@@ -73,11 +74,12 @@ struct Camera {
 };
 
 int main() {
-  Size winsize = {1280, 720};
+  Size winsize = {1920, 1080};
   auto win = std::make_unique<Window>(winsize, "My vulkan app!!");
 
   val::EngineInitConfig init;
-  init.presentation = val::PresentationFormat::Fifo;
+  init.features10.tessellationShader = true;
+  init.presentation = val::PresentationFormat::Mailbox;
   init.useImGUI = true;
 
   auto engine = std::make_unique<val::Engine>(init, win.get());
@@ -95,9 +97,10 @@ int main() {
 
   Camera camera;
 
-  camera.dir = glm::normalize(glm::vec3(0, -1, 10));
+  camera.dir = glm::normalize(glm::vec3(0, -1, 8));
 
-  camera.position.y = 2;
+  camera.position.y = 1;
+  camera.position.z = -20;
 
   auto ticks = SDL_GetTicks();
 
@@ -126,6 +129,8 @@ int main() {
     ImGui::NewFrame();
     ImGui::Begin("vkRaster", &isTrue);
 
+    ImGui::Text("FPS: %d", (uint32_t)(1 / std::max(delta, 0.0001f)));
+
     if (ImGui::Button("Exit")) {
       isOpen = false;
     }
@@ -153,7 +158,15 @@ int main() {
       cmd.transitionTexture(framebuffer, vk::ImageLayout::eUndefined,
                             vk::ImageLayout::eColorAttachmentOptimal);
 
+      waterRenderer.generatePatches(rs);
       skyboxRenderer.renderSkybox(rs);
+
+      cmd.memoryBarrier(vk::PipelineStageFlagBits2::eComputeShader,
+                        vk::AccessFlagBits2::eMemoryWrite,
+                        vk::PipelineStageFlagBits2::eVertexAttributeInput,
+                        vk::AccessFlagBits2::eMemoryRead |
+                            vk::AccessFlagBits2::eMemoryWrite);
+
       cmd.memoryBarrier(vk::PipelineStageFlagBits2::eLateFragmentTests,
                         vk::AccessFlagBits2::eMemoryWrite,
                         vk::PipelineStageFlagBits2::eEarlyFragmentTests,
