@@ -10,6 +10,7 @@ struct RenderState {
   glm::mat4 viewMatrix;
 
   glm::vec3 camPos;
+  glm::vec3 camDir;
 
   val::CommandBuffer *cmd;
 

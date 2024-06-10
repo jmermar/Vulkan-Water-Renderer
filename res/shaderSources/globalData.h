@@ -1,0 +1,1 @@
+const vec3 lightDir = normalize(vec3(0, -1, -20));

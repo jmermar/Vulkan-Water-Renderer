@@ -1,5 +1,6 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : require
+#include "globalData.h"
 
 layout(location = 0) in vec3 coords;
 
@@ -13,4 +14,6 @@ layout(push_constant) uniform constants {
 
 layout(binding = 0) uniform samplerCube textures[];
 
-void main() { color = texture(textures[skyboxTexture], coords); }
+void main() { 
+    vec3 sun = vec3(1) * pow(clamp(dot(normalize(coords), -lightDir), 0, 1), 1000);
+    color = texture(textures[skyboxTexture], coords) + vec4(sun, 0); }

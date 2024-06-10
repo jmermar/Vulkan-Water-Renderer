@@ -2,8 +2,8 @@ const float BASE_A = 0.1;
 const float BASE_W = 1;
 const vec2 BASE_D = normalize(vec2(1, 0));
 
-const uint NUM_FREQUS = 40;
-const float A_MULT = 0.82;
+const uint NUM_FREQUS = 50;
+const float A_MULT = 0.8;
 const float W_MULT = 1.2;
 
 layout (push_constant) uniform constants {

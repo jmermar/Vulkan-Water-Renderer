@@ -2,6 +2,7 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include "pbr.h"
+#include "globalData.h"
 #include "water.h"
 
 layout (location = 0) in vec3 vNorm;
@@ -13,7 +14,6 @@ layout(binding = 0) uniform samplerCube textures[];
 
 const float shininess = 50.0;
 
-const vec3 lightDir = normalize(vec3(0, -1, -15));
 void main() { 
     vec3 norm = WaterNormal(worldPos);
     vec3 camDir = normalize(camPos - worldPos);

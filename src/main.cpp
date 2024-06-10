@@ -97,7 +97,7 @@ int main() {
 
   Camera camera;
 
-  camera.dir = glm::normalize(glm::vec3(0, -1, 8));
+  camera.dir = glm::normalize(glm::vec3(0, 0, 1));
 
   camera.position.y = 1;
   camera.position.z = -20;
@@ -152,6 +152,7 @@ int main() {
       rs.projectionMatrix = camera.getProjection();
       rs.viewMatrix = camera.getView();
       rs.camPos = camera.position;
+      rs.camDir = camera.dir;
       rs.time = time;
       rs.ambientMap = skyboxRenderer.getSkybox();
 
