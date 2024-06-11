@@ -1,16 +1,18 @@
 #include <memory>
 
-#include "SkyboxRenderer.hpp"
 #include <imgui_impl_sdl3.h>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
-#include "WaterRenderer.hpp"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/matrix.hpp>
+
+#include "PostProcess.hpp"
+#include "SkyboxRenderer.hpp"
+#include "WaterRenderer.hpp"
 
 class Window : public val::PresentationProvider {
 private:
@@ -67,7 +69,7 @@ struct Camera {
   }
 
   glm::mat4 getProjection() {
-    auto ret = glm::perspective(glm::radians(fov), w / h, 0.01f, 3000.f);
+    auto ret = glm::perspective(glm::radians(fov), w / h, 0.1f, 500.f);
     ret[1][1] *= -1;
     return ret;
   }
@@ -86,20 +88,23 @@ int main() {
   val::BufferWriter writer(*engine);
 
   auto framebuffer = engine->createTexture(winsize, val::TextureFormat::RGBA16);
-  auto depthbuffer =
-      engine->createTexture(winsize, val::TextureFormat::DEPTH32);
+  auto depthbuffer = engine->createTexture(winsize, val::TextureFormat::DEPTH32,
+                                           val::TextureSampler::NEAREST, 1);
+
+  auto outputImage = engine->createTexture(winsize, val::TextureFormat::RGBA16);
   bool isOpen = true;
 
   bool isTrue = true;
 
   SkyboxRenderer skyboxRenderer(*engine, writer);
   WaterRenderer waterRenderer(*engine, writer);
+  PostProcess postProcess(*engine);
 
   Camera camera;
 
   camera.dir = glm::normalize(glm::vec3(0, 0, 1));
 
-  camera.position.y = 1;
+  camera.position.y = 2;
   camera.position.z = -20;
 
   auto ticks = SDL_GetTicks();
@@ -174,7 +179,14 @@ int main() {
                         vk::AccessFlagBits2::eMemoryWrite);
       waterRenderer.renderWater(rs);
 
-      engine->submitFrame(framebuffer);
+      cmd.memoryBarrier(vk::PipelineStageFlagBits2::eLateFragmentTests,
+                        vk::AccessFlagBits2::eMemoryWrite,
+                        vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+                        vk::AccessFlagBits2::eMemoryRead);
+
+      postProcess.renderPostProcess(rs, outputImage);
+
+      engine->submitFrame(outputImage);
     }
   }
 

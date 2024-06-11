@@ -19,17 +19,17 @@ void main() {
     vec3 camDir = normalize(camPos - worldPos);
     vec3 halfway = normalize(-lightDir + camDir);
 
-    vec3 reflected = texture(textures[skyboxTexture], reflect(-camDir, norm)).xyz;
+    vec3 reflected = texture(textures[skyboxTexture], reflect(-camDir, norm)).xyz * lightStrength;
     float reflectionFactor = fresnelSchlick90(
         clamp(dot(camDir, norm), 0, 1)
-        ,0.04, 1);
+        ,0.1, 0.95);
 
     reflected *= reflectionFactor;
-    vec3 waterColor = vec3(0.2, 0.5, 1);
+    vec3 waterColor = vec3(0, 0.4, 0.6);
 
 
-    float specular = pow(max(dot(halfway, norm), 0.0), shininess) * reflectionFactor;
-    float diffuse = clamp(dot(-lightDir, norm), 0.4, 1);
+    float specular = pow(max(dot(halfway, norm), 0.0), shininess) * reflectionFactor * lightStrength;
+    float diffuse = clamp(dot(-lightDir, norm), 0.4, 1) * lightStrength;
     
     vec3 diffuseColor = waterColor * (1-reflectionFactor);
     color = vec4(reflected + diffuseColor * diffuse + vec3(1) * specular, 1);

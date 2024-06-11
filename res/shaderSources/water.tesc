@@ -19,7 +19,7 @@ void main() {
     float len11 = length(view11.xyz);
 
     const float MIN_DISTANCE = 1;
-    const float MAX_DISTANCE = 80;
+    const float MAX_DISTANCE = 50;
 
     float dis00 =
         clamp((len00 - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE), 0, 1);

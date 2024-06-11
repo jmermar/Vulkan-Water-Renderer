@@ -16,7 +16,7 @@ enum class PresentationFormat : uint32_t {
 
 enum class TextureFormat : uint32_t {
   RGBA8 = VK_FORMAT_R8G8B8A8_UNORM,
-  RGBA16 = VK_FORMAT_R16G16B16A16_UNORM,
+  RGBA16 = VK_FORMAT_R16G16B16A16_SFLOAT,
   DEPTH32 = VK_FORMAT_D32_SFLOAT
 };
 

@@ -16,4 +16,5 @@ layout(binding = 0) uniform samplerCube textures[];
 
 void main() { 
     vec3 sun = vec3(1) * pow(clamp(dot(normalize(coords), -lightDir), 0, 1), 1000);
-    color = texture(textures[skyboxTexture], coords) + vec4(sun, 0); }
+    color = texture(textures[skyboxTexture], coords) * lightStrength + vec4(sun, 0) * 10;
+}

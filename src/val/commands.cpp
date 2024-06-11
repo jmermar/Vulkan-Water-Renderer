@@ -14,7 +14,8 @@ void CommandBuffer::transitionImage(vk::Image image, uint32_t layer,
                                     vk::ImageLayout srcLayout,
                                     vk::PipelineStageFlagBits2 srcStage,
                                     vk::ImageLayout dstLayout,
-                                    vk::PipelineStageFlagBits2 dstStage) {
+                                    vk::PipelineStageFlagBits2 dstStage,
+                                    bool depth) {
   vk::ImageMemoryBarrier2KHR imageBarrier;
   imageBarrier.srcAccessMask = vk::AccessFlagBits2::eMemoryWrite;
   imageBarrier.srcStageMask = srcStage;
@@ -30,7 +31,8 @@ void CommandBuffer::transitionImage(vk::Image image, uint32_t layer,
   range.levelCount = mipLevels;
   range.layerCount = 1;
   range.baseArrayLayer = layer;
-  range.aspectMask = vk::ImageAspectFlagBits::eColor;
+  range.aspectMask =
+      depth ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
 
   imageBarrier.subresourceRange = range;
 

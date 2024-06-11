@@ -17,14 +17,14 @@ private:
                        vk::ImageLayout srcLayout,
                        vk::PipelineStageFlagBits2 srcStage,
                        vk::ImageLayout dstLayout,
-                       vk::PipelineStageFlagBits2 dstStage);
+                       vk::PipelineStageFlagBits2 dstStage, bool depth = 0);
 
   inline void transitionImage(vk::Image image, uint32_t layer,
                               uint32_t mipLevels, vk::ImageLayout srcLayout,
-                              vk::ImageLayout dstLayout) {
+                              vk::ImageLayout dstLayout, bool depth = 0) {
     transitionImage(image, layer, mipLevels, srcLayout,
                     vk::PipelineStageFlagBits2::eAllCommands, dstLayout,
-                    vk::PipelineStageFlagBits2::eAllCommands);
+                    vk::PipelineStageFlagBits2::eAllCommands, depth);
   }
 
   void copyBufferToBuffer(StorageBuffer *dst, vk::Buffer src, uint32_t srcStart,
@@ -49,13 +49,15 @@ public:
                                 vk::PipelineStageFlagBits2 dstStage,
                                 uint32_t layer = 0) {
     transitionImage(texture->image, layer, texture->mipLevels, srcLayout,
-                    srcStage, dstLayout, dstStage);
+                    srcStage, dstLayout, dstStage,
+                    texture->format == TextureFormat::DEPTH32);
   }
   inline void transitionTexture(Texture *texture, vk::ImageLayout srcLayout,
                                 vk::ImageLayout dstLayout, uint32_t layer = 0) {
     transitionImage(texture->image, layer, texture->mipLevels, srcLayout,
                     vk::PipelineStageFlagBits2::eAllCommands, dstLayout,
-                    vk::PipelineStageFlagBits2::eAllCommands);
+                    vk::PipelineStageFlagBits2::eAllCommands,
+                    texture->format == TextureFormat::DEPTH32);
   }
 
   void copyToTexture(Texture *t, CPUBuffer *buffer,
