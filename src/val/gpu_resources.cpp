@@ -43,7 +43,7 @@ void BufferWriter::updateWrites(CommandBuffer &cmd) {
       vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead);
 }
 
-void BufferWriter::enqueueTextureWrite(Texture *tex, void *data,
+void BufferWriter::enqueueTextureWrite(Texture *tex, const void *data,
                                        uint32_t layer) {
   const auto size =
       helpers::getTextureSizeFromSizeAndFormat(tex->size, tex->format);
@@ -54,7 +54,7 @@ void BufferWriter::enqueueTextureWrite(Texture *tex, void *data,
   textureWrites.push_back({.texture = tex, .buffer = upload, .layer = layer});
 }
 
-void BufferWriter::enqueueBufferWrite(StorageBuffer *buffer, void *data,
+void BufferWriter::enqueueBufferWrite(StorageBuffer *buffer, const void *data,
                                       uint32_t start, size_t size) {
   assert(data);
   assert(start + size <= buffer->size);
@@ -66,7 +66,8 @@ void BufferWriter::enqueueBufferWrite(StorageBuffer *buffer, void *data,
       {.buffer = buffer, .start = start, .size = size, .uploadBuffer = upload});
 }
 
-void BufferWriter::enqueueMeshWrite(Mesh *mesh, void *data, uint32_t dataSize,
+void BufferWriter::enqueueMeshWrite(Mesh *mesh, const void *data,
+                                    uint32_t dataSize,
                                     std::span<uint32_t> indices) {
   auto indicesSize = indices.size() * sizeof(uint32_t);
   assert(data);

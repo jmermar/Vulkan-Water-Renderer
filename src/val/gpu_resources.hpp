@@ -69,11 +69,11 @@ public:
 
   void updateWrites(CommandBuffer &cmd);
 
-  void enqueueTextureWrite(Texture *tex, void *data, uint32_t layer = 0);
-  void enqueueBufferWrite(StorageBuffer *buffer, void *data, uint32_t start,
-                          size_t size);
+  void enqueueTextureWrite(Texture *tex, const void *data, uint32_t layer = 0);
+  void enqueueBufferWrite(StorageBuffer *buffer, const void *data,
+                          uint32_t start, size_t size);
 
-  void enqueueMeshWrite(Mesh *mesh, void *data, uint32_t dataSize,
+  void enqueueMeshWrite(Mesh *mesh, const void *data, uint32_t dataSize,
                         std::span<uint32_t> indices);
 
   template <typename T>

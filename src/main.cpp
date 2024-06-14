@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <glm/matrix.hpp>
 
 #include "PostProcess.hpp"
@@ -75,9 +76,65 @@ struct Camera {
   }
 };
 
+class InputManager {
+private:
+  bool captureMouse = false;
+  const Uint8 *state;
+  glm::vec2 mouseDelta;
+  Window *window;
+
+public:
+  InputManager(Window *window) : window(window) {
+    state = SDL_GetKeyboardState(NULL);
+  }
+
+  void handleEvent(SDL_Event &ev) {
+    if (ev.type == SDL_EVENT_KEY_DOWN) {
+      if (ev.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+        captureMouse = !captureMouse;
+    }
+  }
+
+  void update() {
+    auto winSize = window->getSize();
+    glm::vec2 center(winSize.w / 2.f, winSize.h / 2.f);
+    if (captureMouse) {
+      SDL_SetRelativeMouseMode(true);
+      glm::vec2 mousePos;
+      SDL_GetMouseState(&mousePos.x, &mousePos.y);
+
+      mouseDelta =
+          (center - mousePos) / glm::vec2((float)winSize.w, (float)winSize.h);
+
+      SDL_WarpMouseInWindow(*window, center.x, center.y);
+    } else {
+      SDL_SetRelativeMouseMode(false);
+      mouseDelta = {};
+    }
+  }
+
+  glm::vec3 getMoveVector() {
+    glm::vec3 input(0);
+    if (state[SDL_SCANCODE_A])
+      input.x += -1;
+    if (state[SDL_SCANCODE_D])
+      input.x += 1;
+
+    if (state[SDL_SCANCODE_W])
+      input.z += 1;
+    if (state[SDL_SCANCODE_S])
+      input.z += -1;
+
+    return input;
+  }
+
+  glm::vec2 getMouseDelta() { return mouseDelta; }
+};
+
 int main() {
   Size winsize = {1920, 1080};
   auto win = std::make_unique<Window>(winsize, "My vulkan app!!");
+  InputManager input(win.get());
 
   val::EngineInitConfig init;
   init.features10.tessellationShader = true;
@@ -109,6 +166,8 @@ int main() {
 
   auto ticks = SDL_GetTicks();
 
+  WaterMaterial material{};
+
   float time = 0;
   while (isOpen) {
     auto elapsed = SDL_GetTicks() - ticks;
@@ -125,9 +184,24 @@ int main() {
         break;
       }
       ImGui_ImplSDL3_ProcessEvent(&ev);
+      input.handleEvent(ev);
     }
 
     engine->update();
+    input.update();
+
+    const float speed = 15;
+
+    auto forward = camera.dir;
+    auto right = glm::normalize(glm::cross(camera.dir, glm::vec3(0, 1, 0)));
+
+    auto inputMove = input.getMoveVector();
+
+    camera.position += forward * inputMove.z * speed * delta +
+                       right * inputMove.x * speed * delta;
+
+    camera.rotateX(input.getMouseDelta().x * 30);
+    camera.rotateY(input.getMouseDelta().y * 30);
 
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplSDL3_NewFrame();
@@ -136,13 +210,27 @@ int main() {
 
     ImGui::Text("FPS: %d", (uint32_t)(1 / std::max(delta, 0.0001f)));
 
-    if (ImGui::Button("Exit")) {
-      isOpen = false;
-    }
+    // Draw material params
+
+    ImGui::SliderInt("Number of waves", (int *)&material.numFreqs, 1, 128);
+
+    ImGui::SliderFloat("A", &material.baseA, 0, 1);
+    ImGui::InputFloat("W", &material.baseW);
+
+    ImGui::InputFloat("A Mult", &material.aMult);
+    ImGui::InputFloat("W Mult", &material.wMult);
+
+    ImGui::ColorPicker3("Diffuse color", glm::value_ptr(material.diffuseColor));
+
+    ImGui::InputFloat("F0", &material.baseReflectivity);
+
+    ImGui::InputFloat("Speed", &material.speed);
 
     ImGui::End();
 
     ImGui::Render();
+
+    waterRenderer.updateMaterial(material);
 
     auto cmd = engine->initFrame();
 

@@ -10,8 +10,8 @@ layout (location = 0) out vec4 color;
 
 layout(binding = 0) uniform sampler2D textures[];
 
-const float density = 0.025;
-const float gradient = 1;
+const float density = 0.005;
+const float gradient = 2.5;
 
 const float minHeightFog = 0.5;
 const float maxHeightFog = 100;
@@ -23,8 +23,10 @@ void main() {
     vec4 viewCoords = invProj * vec4(uv.x * 2 - 1, uv.y * 2 -1, rawDepth, 1);
     viewCoords /= viewCoords.w;
 
+    float h = (invView * viewCoords).y;
+
     float fogVisibility = clamp(exp(-pow(-viewCoords.z*density, gradient)), 0, 1);
-    float fogFactor = pow(clamp((viewCoords.y - minHeightFog) / (maxHeightFog - minHeightFog), 0, 1), 2);
+    float fogFactor = pow(clamp((h - minHeightFog) / (maxHeightFog - minHeightFog), 0, 1), 2);
 
     float visibility = mix(fogVisibility, 1, fogFactor);
 
@@ -33,7 +35,7 @@ void main() {
 
     //Tonemapping
 
-    vec3 mapped = vec3(1) -exp(-hdrColor * 0.1);
+    vec3 mapped = vec3(1) -exp(-hdrColor * 0.7);
 
     color = vec4(mapped, 1);
 }

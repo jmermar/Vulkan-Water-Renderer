@@ -15,6 +15,6 @@ layout(push_constant) uniform constants {
 layout(binding = 0) uniform samplerCube textures[];
 
 void main() { 
-    vec3 sun = vec3(1) * pow(clamp(dot(normalize(coords), -lightDir), 0, 1), 1000);
+    vec3 sun = vec3(1) * pow(clamp(dot(normalize(coords), -lightDir), 0, 1), 500);
     color = texture(textures[skyboxTexture], coords) * lightStrength + vec4(sun, 0) * 10;
 }

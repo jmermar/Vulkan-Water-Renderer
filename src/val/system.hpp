@@ -156,7 +156,7 @@ public:
 
   Mesh *createMesh(size_t verticesSize, uint32_t indicesCount);
 
-  void updateCPUBuffer(CPUBuffer *buffer, void *data, size_t size) {
+  void updateCPUBuffer(CPUBuffer *buffer, const void *data, size_t size) {
     assert(buffer->size == size);
     memcpy(buffer->buffer.allocInfo.pMappedData, data, size);
   }

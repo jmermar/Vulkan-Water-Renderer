@@ -80,7 +80,7 @@ void Engine::reloadSwapchain() {
   auto vkbSwapchain =
       vkb::SwapchainBuilder(*chosenGPU, *device, *surface)
           .set_desired_format(VkSurfaceFormatKHR{
-              .format = VK_FORMAT_B8G8R8A8_UNORM,
+              .format = VK_FORMAT_B8G8R8A8_SRGB,
               .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
           .set_desired_present_mode((VkPresentModeKHR)initConfig.presentation)
           .set_desired_extent(windowSize.w, windowSize.h)

@@ -13,6 +13,7 @@ struct WaterPushConstants {
   glm::mat4 view;
   glm::vec3 camPos;
   val::BindPoint<val::Texture> skybox;
+  val::BindPoint<val::StorageBuffer> material;
   float time;
 };
 
@@ -31,7 +32,7 @@ struct ComputePushConstants {
 
 WaterRenderer::WaterRenderer(val::Engine &engine,
                              val::BufferWriter &bufferWritter)
-    : engine(engine) {
+    : engine(engine), writer(bufferWritter) {
 
   auto vertShader = file::readBinary("shaders/water.vert.spv");
   auto fragShader = file::readBinary("shaders/water.frag.spv");
@@ -65,6 +66,8 @@ WaterRenderer::WaterRenderer(val::Engine &engine,
   patchGenerator = cpBuild.setShader(compShader)
                        .setPushConstant<ComputePushConstants>()
                        .build();
+
+  waterMaterial = engine.createStorageBuffer(sizeof(WaterMaterial));
   drawIndirectCommand = engine.createStorageBuffer(
       sizeof(DrawIndirectCommand), vk::BufferUsageFlagBits::eIndirectBuffer);
 }
@@ -72,6 +75,10 @@ WaterRenderer::WaterRenderer(val::Engine &engine,
 WaterRenderer::~WaterRenderer() {
   engine.destroyStorageBuffer(waterPatches);
   engine.destroyStorageBuffer(drawIndirectCommand);
+}
+
+void WaterRenderer::updateMaterial(const WaterMaterial &material) {
+  writer.enqueueBufferWrite(waterMaterial, &material, 0, sizeof(WaterMaterial));
 }
 
 void WaterRenderer::generatePatches(RenderState &rs) {
@@ -102,6 +109,7 @@ void WaterRenderer::renderWater(RenderState &rs) {
   pc.camPos = rs.camPos;
   pc.view = rs.viewMatrix;
   pc.skybox = rs.ambientMap->bindPoint;
+  pc.material = waterMaterial->bindPoint;
 
   cmd.bindPipeline(pipeline);
   cmd.pushConstants(pipeline, pc);

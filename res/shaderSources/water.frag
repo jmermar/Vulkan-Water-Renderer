@@ -1,4 +1,6 @@
-#version 450
+#version 460
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_ARB_separate_shader_objects : enable
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include "pbr.h"
@@ -20,17 +22,7 @@ void main() {
     vec3 halfway = normalize(-lightDir + camDir);
 
     vec3 reflected = texture(textures[skyboxTexture], reflect(-camDir, norm)).xyz * lightStrength;
-    float reflectionFactor = fresnelSchlick90(
-        clamp(dot(camDir, norm), 0, 1)
-        ,0.1, 0.95);
 
-    reflected *= reflectionFactor;
-    vec3 waterColor = vec3(0, 0.4, 0.6);
-
-
-    float specular = pow(max(dot(halfway, norm), 0.0), shininess) * reflectionFactor * lightStrength;
-    float diffuse = clamp(dot(-lightDir, norm), 0.4, 1) * lightStrength;
-    
-    vec3 diffuseColor = waterColor * (1-reflectionFactor);
-    color = vec4(reflected + diffuseColor * diffuse + vec3(1) * specular, 1);
+    vec3 waterColor = GET(material).diffuseColor.rgb;
+    color = vec4(brdfMicrofacet(-lightDir, camDir, norm, 0, 0.05, reflected, waterColor, 1), 1);
 }

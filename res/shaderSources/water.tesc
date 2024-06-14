@@ -1,4 +1,6 @@
-#version 450
+#version 460
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_ARB_separate_shader_objects : enable
 #extension GL_EXT_nonuniform_qualifier : require
 
 layout(vertices = 4) out;
@@ -19,7 +21,7 @@ void main() {
     float len11 = length(view11.xyz);
 
     const float MIN_DISTANCE = 1;
-    const float MAX_DISTANCE = 50;
+    const float MAX_DISTANCE = 100;
 
     float dis00 =
         clamp((len00 - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE), 0, 1);

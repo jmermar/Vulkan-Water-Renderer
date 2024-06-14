@@ -4,7 +4,7 @@
 
 #include "bindUtils.h"
 
-const float PATCH_SIZE = 4;
+const float PATCH_SIZE = 8;
 const uint MAX_PATCH = 128;
 const uint NUM_PATCHES = MAX_PATCH * MAX_PATCH;
 

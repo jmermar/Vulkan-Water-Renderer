@@ -43,8 +43,7 @@ float disneyDiffuseFactor(float NoV, float NoL, float VoH, float roughness) {
     return F_in * F_out;
 }
 
-vec3 brdfMicrofacet(in vec3 L, in vec3 V, in vec3 N, in float metallic,
-                    in float roughness, in vec3 baseColor,
+vec3 brdfMicrofacet(in vec3 L, in vec3 V, in vec3 N, in float metallic, in float roughness, in vec3 reflection,  in vec3 baseColor,
                     in float reflectance) {
     vec3 H = normalize(V + L);
 
@@ -52,15 +51,17 @@ vec3 brdfMicrofacet(in vec3 L, in vec3 V, in vec3 N, in float metallic,
     float NoL = clamp(dot(N, L), 0.0, 1.0);
     float NoH = clamp(dot(N, H), 0.0, 1.0);
     float VoH = clamp(dot(V, H), 0.0, 1.0);
+    float NDotL = max(dot(N, L), 0.0);
 
-    vec3 f0 = vec3(0.16 * (reflectance * reflectance));
+    vec3 f0 = vec3(0.02);
     f0 = mix(f0, baseColor, metallic);
 
-    vec3 F = fresnelSchlick(VoH, f0);
+    float F = fresnelSchlick90(NoV, 0.02, 0.9);
+
     float D = D_GGX(NoH, roughness);
     float G = G_Smith(NoV, NoL, roughness);
 
-    vec3 spec = (F * D * G) / (4.0 * max(NoV, 0.001) * max(NoL, 0.001));
+    vec3 spec = (vec3(F) * D * G) / (4.0 * max(NoV, 0.001) * max(NoL, 0.001));
 
     vec3 rhoD = baseColor;
 
@@ -72,5 +73,5 @@ vec3 brdfMicrofacet(in vec3 L, in vec3 V, in vec3 N, in float metallic,
 
     vec3 diff = rhoD * RECIPROCAL_PI;
 
-    return diff + spec;
+    return (diff * (1 - F) + (reflection + spec) * F );
 }
