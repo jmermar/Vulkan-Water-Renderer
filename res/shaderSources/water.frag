@@ -24,5 +24,10 @@ void main() {
     vec3 reflected = texture(textures[skyboxTexture], reflect(-camDir, norm)).xyz * lightStrength;
 
     vec3 waterColor = GET(material).diffuseColor.rgb;
-    color = vec4(brdfMicrofacet(-lightDir, camDir, norm, 0, 0.05, reflected, waterColor, 1), 1);
+
+
+    vec3 colorLight = brdfMicrofacet(-lightDir, camDir, norm, 0, GET(material).roughness, waterColor, GET(material).baseReflectivity);
+    vec3 colorAmbient = brdfAmbient(-lightDir, camDir, norm, 0, GET(material).roughness, waterColor, reflected, GET(material).baseReflectivity);
+
+    color = vec4(colorLight + colorAmbient, 1);
 }

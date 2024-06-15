@@ -224,6 +224,8 @@ int main() {
 
     ImGui::InputFloat("F0", &material.baseReflectivity);
 
+    ImGui::SliderFloat("Roughness", &material.roughness, 0, 1);
+
     ImGui::InputFloat("Speed", &material.speed);
 
     ImGui::End();

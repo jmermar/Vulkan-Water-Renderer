@@ -43,8 +43,8 @@ float disneyDiffuseFactor(float NoV, float NoL, float VoH, float roughness) {
     return F_in * F_out;
 }
 
-vec3 brdfMicrofacet(in vec3 L, in vec3 V, in vec3 N, in float metallic, in float roughness, in vec3 reflection,  in vec3 baseColor,
-                    in float reflectance) {
+vec3 brdfMicrofacet(in vec3 L, in vec3 V, in vec3 N, in float metallic, in float roughness, in vec3 baseColor,
+                    in float f0f) {
     vec3 H = normalize(V + L);
 
     float NoV = clamp(dot(N, V), 0.0, 1.0);
@@ -53,15 +53,15 @@ vec3 brdfMicrofacet(in vec3 L, in vec3 V, in vec3 N, in float metallic, in float
     float VoH = clamp(dot(V, H), 0.0, 1.0);
     float NDotL = max(dot(N, L), 0.0);
 
-    vec3 f0 = vec3(0.02);
+    vec3 f0 = vec3(f0f);
     f0 = mix(f0, baseColor, metallic);
 
-    float F = fresnelSchlick90(NoV, 0.02, 0.9);
+    vec3 F = fresnelSchlick(NoV, f0);
 
     float D = D_GGX(NoH, roughness);
     float G = G_Smith(NoV, NoL, roughness);
 
-    vec3 spec = (vec3(F) * D * G) / (4.0 * max(NoV, 0.001) * max(NoL, 0.001));
+    vec3 spec = (F * D * G) / (4.0 * max(NoV, 0.001) * max(NoL, 0.001));
 
     vec3 rhoD = baseColor;
 
@@ -73,5 +73,24 @@ vec3 brdfMicrofacet(in vec3 L, in vec3 V, in vec3 N, in float metallic, in float
 
     vec3 diff = rhoD * RECIPROCAL_PI;
 
-    return (diff * (1 - F) + (reflection + spec) * F );
+    return (diff + spec );
+}
+
+vec3 brdfAmbient(in vec3 L, in vec3 V, in vec3 N, in float metallic, in float roughness, in vec3 baseColor,
+                    in vec3 reflection, in float f0f) {
+
+    vec3 f0 = vec3(f0f);
+    f0 = mix(f0, baseColor, metallic);
+
+    vec3 F = fresnelSchlick(max(dot(N, V), 0.0), vec3(f0));
+    
+    vec3 kS = F;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;	  
+    
+    vec3 diffuse = baseColor * 0.2;
+      
+    vec3 specular = reflection * F;
+
+    return kD * diffuse + specular;
 }

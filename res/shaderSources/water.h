@@ -15,6 +15,8 @@ SSB(material, {
     float speed;
 
     float baseReflectivity;
+
+    float roughness;
 });
 
 layout (push_constant) uniform constants {
@@ -26,7 +28,7 @@ layout (push_constant) uniform constants {
     float time;
 };
 
-const float k = 3;
+const float k = 7;
 
 float H(vec2 D, vec2 pos, float A, float w, float speed) {
     return pow((sin(dot(D, pos) * w + time * speed) + 1) * 0.5, k) * 2 * A;
