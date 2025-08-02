@@ -1,5 +1,6 @@
 #include <memory>
-
+#undef VK_NULL_HANDLE
+#define VK_NULL_HANDLE nullptr
 #include <imgui_impl_sdl3.h>
 
 #include <SDL3/SDL.h>
@@ -15,12 +16,14 @@
 #include "SkyboxRenderer.hpp"
 #include "WaterRenderer.hpp"
 
-class Window : public val::PresentationProvider {
+class Window : public val::PresentationProvider
+{
 private:
   SDL_Window *window{};
 
 public:
-  Window(Size size, const char *name) {
+  Window(Size size, const char *name)
+  {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     window = SDL_CreateWindow(name, size.w, size.h, SDL_WINDOW_VULKAN);
   }
@@ -28,13 +31,15 @@ public:
 
   operator SDL_Window *() { return window; }
 
-  VkSurfaceKHR getSurface(VkInstance instance) override {
+  VkSurfaceKHR getSurface(VkInstance instance) override
+  {
     VkSurfaceKHR sur;
     SDL_Vulkan_CreateSurface(window, instance, nullptr, &sur);
     return sur;
   }
 
-  Size getSize() override {
+  Size getSize() override
+  {
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
     return {(uint32_t)w, (uint32_t)h};
@@ -43,11 +48,13 @@ public:
   void initImgui() override { ImGui_ImplSDL3_InitForVulkan(window); }
 };
 
-struct Camera {
+struct Camera
+{
   glm::vec3 position = {0, 0, 0}, dir = {0, 0, 1};
   float fov = 90, w = 1, h = 1;
 
-  void rotateX(float degrees) {
+  void rotateX(float degrees)
+  {
     auto angle = glm::radians(degrees / 2.f);
     glm::quat rotation(glm::cos(angle), glm::vec3(0, 1, 0) * glm::sin(angle));
     glm::quat rotationC = glm::conjugate(rotation);
@@ -55,7 +62,8 @@ struct Camera {
     dir = rotation * dir * rotationC;
   }
 
-  void rotateY(float degrees) {
+  void rotateY(float degrees)
+  {
     auto angle = glm::radians(degrees / 2.f);
     glm::quat rotation(glm::cos(angle),
                        glm::normalize(glm::cross(dir, glm::vec3(0, 1, 0))) *
@@ -65,18 +73,21 @@ struct Camera {
     dir = rotation * dir * rotationC;
   }
 
-  glm::mat4 getView() {
+  glm::mat4 getView()
+  {
     return glm::lookAt(position, dir + position, glm::vec3(0, 1, 0));
   }
 
-  glm::mat4 getProjection() {
+  glm::mat4 getProjection()
+  {
     auto ret = glm::perspective(glm::radians(fov), w / h, 0.1f, 500.f);
     ret[1][1] *= -1;
     return ret;
   }
 };
 
-class InputManager {
+class InputManager
+{
 private:
   bool captureMouse = false;
   const Uint8 *state;
@@ -84,21 +95,26 @@ private:
   Window *window;
 
 public:
-  InputManager(Window *window) : window(window) {
+  InputManager(Window *window) : window(window)
+  {
     state = SDL_GetKeyboardState(NULL);
   }
 
-  void handleEvent(SDL_Event &ev) {
-    if (ev.type == SDL_EVENT_KEY_DOWN) {
+  void handleEvent(SDL_Event &ev)
+  {
+    if (ev.type == SDL_EVENT_KEY_DOWN)
+    {
       if (ev.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
         captureMouse = !captureMouse;
     }
   }
 
-  void update() {
+  void update()
+  {
     auto winSize = window->getSize();
     glm::vec2 center(winSize.w / 2.f, winSize.h / 2.f);
-    if (captureMouse) {
+    if (captureMouse)
+    {
       SDL_SetRelativeMouseMode(true);
       glm::vec2 mousePos;
       SDL_GetMouseState(&mousePos.x, &mousePos.y);
@@ -107,13 +123,16 @@ public:
           (center - mousePos) / glm::vec2((float)winSize.w, (float)winSize.h);
 
       SDL_WarpMouseInWindow(*window, center.x, center.y);
-    } else {
+    }
+    else
+    {
       SDL_SetRelativeMouseMode(false);
       mouseDelta = {};
     }
   }
 
-  glm::vec3 getMoveVector() {
+  glm::vec3 getMoveVector()
+  {
     glm::vec3 input(0);
     if (state[SDL_SCANCODE_A])
       input.x += -1;
@@ -131,7 +150,8 @@ public:
   glm::vec2 getMouseDelta() { return mouseDelta; }
 };
 
-int main() {
+int main()
+{
   Size winsize = {1920, 1080};
   auto win = std::make_unique<Window>(winsize, "My vulkan app!!");
   InputManager input(win.get());
@@ -169,7 +189,8 @@ int main() {
   WaterMaterial material{};
 
   float time = 0;
-  while (isOpen) {
+  while (isOpen)
+  {
     auto elapsed = SDL_GetTicks() - ticks;
     ticks = SDL_GetTicks();
 
@@ -177,8 +198,10 @@ int main() {
     time += delta;
     SDL_Event ev;
 
-    while (SDL_PollEvent(&ev)) {
-      switch (ev.type) {
+    while (SDL_PollEvent(&ev))
+    {
+      switch (ev.type)
+      {
       case SDL_EVENT_QUIT:
         isOpen = false;
         break;
@@ -236,7 +259,8 @@ int main() {
 
     auto cmd = engine->initFrame();
 
-    if (cmd.isValid()) {
+    if (cmd.isValid())
+    {
 
       writer.updateWrites(cmd);
 
