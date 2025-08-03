@@ -188,6 +188,16 @@ int main()
 
   WaterMaterial material{};
 
+  material.numFreqs = 65;
+  material.baseA = 0.6;
+  material.baseW = 0.2;
+  material.aMult = 0.8;
+  material.wMult = 1.2;
+  material.diffuseColor = glm::vec4(0.f, 18.f / 255, 55.f / 255, 0.f);
+  material.baseReflectivity = 0.015;
+  material.roughness = 0.152;
+  material.speed = 2;
+
   float time = 0;
   while (isOpen)
   {
@@ -232,6 +242,30 @@ int main()
     ImGui::Begin("vkRaster", &isTrue);
 
     ImGui::Text("FPS: %d", (uint32_t)(1 / std::max(delta, 0.0001f)));
+
+    if (ImGui::Button("Open sea")) {
+      material.numFreqs = 65;
+      material.baseA = 0.6;
+      material.baseW = 0.2;
+      material.aMult = 0.8;
+      material.wMult = 1.2;
+      material.diffuseColor = glm::vec4(0.f, 18.f / 255, 55.f / 255, 0.f);
+      material.baseReflectivity = 0.015;
+      material.roughness = 0.152;
+      material.speed = 2;
+    }
+
+    if (ImGui::Button("Calm lake")) {
+      material.numFreqs = 12;
+      material.baseA = 0.06;
+      material.baseW = 0.5;
+      material.aMult = 0.8;
+      material.wMult = 1.2;
+      material.diffuseColor = glm::vec4(0.f, 54.f / 255, 89.f / 255, 0.f);
+      material.baseReflectivity = 0.02;
+      material.roughness = 0.06;
+      material.speed = 0.9;
+    }
 
     // Draw material params
 
